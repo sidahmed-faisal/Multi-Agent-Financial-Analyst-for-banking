@@ -154,11 +154,15 @@ async def upload_and_process_document(file: UploadFile = File(...)) -> Dict[str,
     
     temp_path = None
     try:
-        # Save uploaded file to temporary location
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp:
-            contents = await file.read()
+        # Save uploaded file to temporary location with ORIGINAL FILENAME
+        # This is crucial so process_fab_document can identify the document type from the filename
+        temp_dir = tempfile.gettempdir()
+        temp_path = os.path.join(temp_dir, file.filename)
+        
+        # Write file contents to the temp path with original filename
+        contents = await file.read()
+        with open(temp_path, 'wb') as tmp:
             tmp.write(contents)
-            temp_path = tmp.name
         
         # Process the document
         print(f"\n📄 Processing document: {file.filename}")
