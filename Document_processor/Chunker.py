@@ -22,7 +22,8 @@ class OllamaEmbeddingFunction(EmbeddingFunction):
 class FABDocumentChunker:
     def __init__(self, chroma_persist_directory: str = "./chroma_db", ollama_url: str = ""):
         self.chroma_client = chromadb.PersistentClient(path=chroma_persist_directory)
-        self.embedding_client = OllamaEmbeddingClient(base_url="http://localhost:11434")
+        # If an explicit URL is provided prefer it; otherwise OllamaEmbeddingClient will read OLLAMA_URL env var
+        self.embedding_client = OllamaEmbeddingClient(base_url=ollama_url if ollama_url else None)
         
         # Create the embedding function wrapper
         embedding_function = OllamaEmbeddingFunction(self.embedding_client)
@@ -208,9 +209,19 @@ class FABDocumentChunker:
         """
         Search for relevant chunks in ChromaDB using Ollama embeddings
         """
-        where_clause = {}
-        if filters:
-            where_clause = filters
+        where_clause = None
+        
+        if filters and len(filters) > 0:
+            # Build where clause with $and operator for multiple filters
+            if len(filters) == 1:
+                # Single filter - no need for $and
+                where_clause = filters
+            else:
+                # Multiple filters - use $and operator
+                conditions = []
+                for key, value in filters.items():
+                    conditions.append({key: value})
+                where_clause = {"$and": conditions}
         
         try:
             results = self.collection.query(
