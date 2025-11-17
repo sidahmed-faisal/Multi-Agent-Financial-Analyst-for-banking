@@ -148,8 +148,7 @@ class FABDocumentChunker:
                 'chunk_id': chunk_id,
                 'content_type': content_type,
                 'full_section': section['section_name'],
-                'source_document': doc_metadata['filename'],
-                'embedding_model': 'embeddinggemma'
+                'source_document': doc_metadata['filename']
             }
         }
     
