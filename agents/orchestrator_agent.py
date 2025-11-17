@@ -66,8 +66,10 @@ PLAN:
 """)
 
     def create_plan(self, query: str) -> List[str]:
-        """Create execution plan for the query"""
+        """Create execution plan for the query with tracing"""
         chain = self.planning_prompt | self.llm | StrOutputParser()
+        
+        trace_inputs = {"query": query}
         
         try:
             plan_text = chain.invoke({"query": query})
@@ -79,10 +81,33 @@ PLAN:
                 # Fallback: split by newlines and clean
                 plan = [step.strip() for step in plan_text.split('\n') if step.strip()]
             
-            return plan if plan else ["RETRIEVE: General information about the query"]
+            final_plan = plan if plan else ["RETRIEVE: General information about the query"]
+            
+            # Trace the planning results on langsmith
+            self._trace_execution(
+                operation="create_plan",
+                inputs=trace_inputs,
+                outputs={
+                    "original_query": query,
+                    "generated_plan": final_plan,
+                    "plan_steps_count": len(final_plan)
+                },
+                metadata={"planning_strategy": "multi_step_decomposition"}
+            )
+            
+            return final_plan
             
         except Exception as e:
             print(f"Error creating plan: {e}")
+            
+            # Trace the error
+            self._trace_execution(
+                operation="create_plan_error",
+                inputs=trace_inputs,
+                outputs={"error": str(e), "fallback_plan": ["RETRIEVE: General information about the query"]},
+                metadata={"error_type": "planning_failure"}
+            )
+            
             return ["RETRIEVE: General information about the query"]
     
     def should_continue(self, state: AgentState) -> str:

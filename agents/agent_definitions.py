@@ -32,7 +32,7 @@ class BaseAgent:
         self.llm = llm
         self.name = name
         self.description = description
-        # Initialize tracer for LangSmith
+        # Initialize tracer for LangSmith on agent creation
         if LangSmithTracer:
             self.tracer = LangSmithTracer(agent_name=name)
         else:
