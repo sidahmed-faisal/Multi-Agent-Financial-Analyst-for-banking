@@ -10,3 +10,4 @@ python-multipart
 pydantic
 langgraph
 langsmith
+streamlit
