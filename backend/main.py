@@ -127,76 +127,75 @@ async def health_check() -> Dict[str, str]:
     return {"status": "healthy", "service": "FAB Financial Analyst API"}
 
 
-@app.post("/upload", response_model=UploadResponse)
-async def upload_and_process_document(file: UploadFile = File(...)) -> Dict[str, Any]:
+
+# Accept multiple files for upload
+from fastapi import UploadFile
+from typing import List
+
+@app.post("/upload")
+async def upload_and_process_documents(files: List[UploadFile] = File(...)) -> List[Dict[str, Any]]:
     """
-    Upload and process a FAB financial document (Financial Statement, Earnings Presentation, or Results Call).
-    
-    The filename must contain one of these keywords:
-    - 'FS-' for Financial Statements
-    - 'Earnings-Presentation' or 'Earnings Presentation' for Earnings Presentations
-    - 'Results-Call' or 'Results Call' for Results Calls
-    
-    Supported formats:
-    - FAB-FS-Q1-2025-English.pdf
-    - FAB-Earnings-Presentation-Q1-2025.pdf
-    - FAB-Q1-2025-Results-Call.pdf
-    
-    Returns:
-    - Document metadata (type, quarter, year, sections)
-    - Number of chunks stored in ChromaDB
-    - Processing status
+    Upload and process one or more FAB financial documents (Financial Statement, Earnings Presentation, or Results Call).
+    Accepts multiple files in a single request.
+    Returns a list of results for each file.
     """
     if not chunker or not agent_manager:
         raise HTTPException(status_code=503, detail="Server not fully initialized")
-    
-    if not file.filename or not file.filename.endswith('.pdf'):
-        raise HTTPException(status_code=400, detail="Only PDF files are supported")
-    
-    temp_path = None
-    try:
-        # Save uploaded file to temporary location with ORIGINAL FILENAME
-        # This is crucial so process_fab_document can identify the document type from the filename
-        temp_dir = tempfile.gettempdir()
-        temp_path = os.path.join(temp_dir, file.filename)
-        
-        # Write file contents to the temp path with original filename
-        contents = await file.read()
-        with open(temp_path, 'wb') as tmp:
-            tmp.write(contents)
-        
-        # Process the document
-        print(f"\n📄 Processing document: {file.filename}")
-        processed_doc = process_fab_document(temp_path)
-        
-        # Store in ChromaDB
-        print(f"💾 Storing chunks in ChromaDB...")
-        chunks_stored = chunker.process_document_for_storage(processed_doc)
-        
-        if chunks_stored == 0:
-            raise ValueError("No chunks were generated from the document")
-        
-        return {
-            "filename": file.filename,
-            "document_type": processed_doc['document_type'],
-            "metadata": processed_doc['metadata'],
-            "chunks_stored": chunks_stored,
-            "success": True,
-            "message": f"Successfully processed and stored {chunks_stored} chunks from {file.filename}"
-        }
-    
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=f"Invalid document: {str(e)}")
-    except Exception as e:
-        print(f"✗ Error processing document: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error processing document: {str(e)}")
-    finally:
-        # Clean up temporary file
-        if temp_path and os.path.exists(temp_path):
-            try:
-                os.unlink(temp_path)
-            except Exception as e:
-                print(f"Warning: Could not delete temp file {temp_path}: {str(e)}")
+
+    results = []
+    for file in files:
+        if not file.filename or not file.filename.endswith('.pdf'):
+            results.append({
+                "filename": file.filename,
+                "success": False,
+                "message": "Only PDF files are supported"
+            })
+            continue
+
+        temp_path = None
+        try:
+            temp_dir = tempfile.gettempdir()
+            temp_path = os.path.join(temp_dir, file.filename)
+            contents = await file.read()
+            with open(temp_path, 'wb') as tmp:
+                tmp.write(contents)
+
+            print(f"\n📄 Processing document: {file.filename}")
+            processed_doc = process_fab_document(temp_path)
+            print(f"💾 Storing chunks in ChromaDB...")
+            chunks_stored = chunker.process_document_for_storage(processed_doc)
+
+            if chunks_stored == 0:
+                raise ValueError("No chunks were generated from the document")
+
+            results.append({
+                "filename": file.filename,
+                "document_type": processed_doc['document_type'],
+                "metadata": processed_doc['metadata'],
+                "chunks_stored": chunks_stored,
+                "success": True,
+                "message": f"Successfully processed and stored {chunks_stored} chunks from {file.filename}"
+            })
+        except ValueError as e:
+            results.append({
+                "filename": file.filename,
+                "success": False,
+                "message": f"Invalid document: {str(e)}"
+            })
+        except Exception as e:
+            print(f"✗ Error processing document: {str(e)}")
+            results.append({
+                "filename": file.filename,
+                "success": False,
+                "message": f"Error processing document: {str(e)}"
+            })
+        finally:
+            if temp_path and os.path.exists(temp_path):
+                try:
+                    os.unlink(temp_path)
+                except Exception as e:
+                    print(f"Warning: Could not delete temp file {temp_path}: {str(e)}")
+    return results
 
 
 @app.post("/query", response_model=QueryResponse)
