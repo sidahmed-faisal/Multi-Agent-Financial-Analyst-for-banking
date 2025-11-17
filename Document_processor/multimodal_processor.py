@@ -31,7 +31,7 @@ def process_financial_statement(pdf_path):
        - Maintain number alignment and formatting
        - Extract both AED millions and percentages accurately
     
-    3. SPECIFIC SECTIONS TO IDENTIFY (USE EXACT NAMES):
+    3. COMMON SECTIONS TO EXPECT:
       Focus very well on parsing these sections accurately with proper values alignment.
        #Section Review report on condensed consolidated interim financial information
        #Section Condensed consolidated interim statement of financial position
@@ -40,8 +40,6 @@ def process_financial_statement(pdf_path):
        #Section Condensed consolidated interim statement of changes in equity
        #Section Condensed consolidated interim statement of cash flows
        #Section Notes to the condensed consolidated interim financial information
-    
-    4. NOTES SECTIONS (USE EXACT NAMES WITHOUT NUMBERS):
        #Section Legal status and principal activities
        #Section Basis of preparation
        #Section Statement of compliance
@@ -78,12 +76,12 @@ def process_financial_statement(pdf_path):
        #Section Proposed transaction
        #Section Subsequent events
     
-    5. PAGE NUMBER TRACKING:
-       - Include #Page [NUMBER] at the beginning of each section
+    4. PAGE NUMBER TRACKING:
+       - Include #Section [SECTION NAME] #Page [NUMBER] at the beginning of each section
        - Track page numbers for all content
-       - Note when content spans multiple pages
+       - Note when content spans multiple pages and continued sections
     
-    6. TABLE PROCESSING:
+    5. TABLE PROCESSING:
        - some of the pages are images of tables
        - Use OCR to extract text from image-based tables
        - maintain table structure and alignment
