@@ -56,7 +56,7 @@ class FABDocumentChunker:
         
         return sections
     
-    def chunk_section_content(self, section: Dict[str, Any], doc_metadata: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def chunk_section_content(self, section: Dict[str, Any], doc_metadata: Dict[str, Any], start_chunk_id: int = 0) -> List[Dict[str, Any]]:
         """
         Split section content into manageable chunks while preserving context
         """
@@ -71,7 +71,7 @@ class FABDocumentChunker:
         parts = re.split(table_split_pattern, content)
         
         current_chunk = ""
-        chunk_id = 0
+        chunk_id = start_chunk_id  # Use provided start ID
         
         for part in parts:
             if not part.strip():
@@ -170,11 +170,14 @@ class FABDocumentChunker:
             return 0
         
         all_chunks = []
+        global_chunk_id = 0  # Global counter for entire document
         
         for section in sections:
             # Chunk the section content
-            section_chunks = self.chunk_section_content(section, metadata)
+            section_chunks = self.chunk_section_content(section, metadata, global_chunk_id)
             all_chunks.extend(section_chunks)
+            # Update global counter based on chunks created
+            global_chunk_id += len(section_chunks)
         
         if not all_chunks:
             print(f"Warning: No chunks created from {metadata['filename']}")
