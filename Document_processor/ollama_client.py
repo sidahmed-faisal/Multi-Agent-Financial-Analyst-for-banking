@@ -33,7 +33,7 @@ class OllamaEmbeddingClient:
         except Exception as e:
             print(f"Error getting embedding from {self.embedding_url}: {e}")
             # Return a zero vector as fallback (adjust dimension as needed)
-            return [0.0] * 1024  # embeddinggemma typically uses 1024 dimensions
+            return [0.0] * 768  # nomic-embed-text uses 768 dimensions
 
     def get_embeddings_batch(self, texts: List[str]) -> List[List[float]]:
         """Get embeddings for multiple texts (sequential processing)"""
