@@ -8,6 +8,7 @@ __pycache__/
 
 # Documents
 Documents/
+chroma_db/
 
 # Distribution / packaging
 .Python

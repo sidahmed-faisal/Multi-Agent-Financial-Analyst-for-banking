@@ -9,3 +9,4 @@ uvicorn[standard]
 python-multipart
 pydantic
 langgraph
+langsmith

@@ -102,6 +102,8 @@ def process_financial_statement(pdf_path):
        - Preserve exact numerical values and alignment
        - Include table headers and footnotes
        - Maintain AED million units
+       
+    -  IMPORTANT: Make sure to go through all pages to extract text.
     
     OUTPUT FORMAT: 
     #Section [SECTION_NAME]

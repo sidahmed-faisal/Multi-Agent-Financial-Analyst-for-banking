@@ -8,7 +8,7 @@ class OllamaEmbeddingClient:
 
     Environment variables:
     - OLLAMA_URL (default: http://localhost:11434)
-    - OLLAMA_MODEL (default: embeddinggemma:latest)
+    - OLLAMA_MODEL (default: nomic-embed-text:latest)
     """
     def __init__(self, base_url: str = None, model: str = None):
         # Allow explicit override via constructor, otherwise read from env, then fallback to hard-coded default

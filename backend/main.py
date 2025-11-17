@@ -25,6 +25,7 @@ from Document_processor.Chunker import FABDocumentChunker
 from agents import FABAgentManager
 from langchain_openai import ChatOpenAI
 
+
 # Initialize FastAPI app
 app = FastAPI(
     title="FAB Financial Analyst API",
