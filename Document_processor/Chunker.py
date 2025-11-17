@@ -5,8 +5,8 @@ import uuid
 import re
 from typing import List, Dict, Any
 import os
-from multimodal_processor import process_fab_document
-from ollama_client import OllamaEmbeddingClient
+from .multimodal_processor import process_fab_document
+from .ollama_client import OllamaEmbeddingClient
 
 
 class OllamaEmbeddingFunction(EmbeddingFunction):

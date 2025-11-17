@@ -1,5 +1,14 @@
 import google.generativeai as genai
 import re
+import os
+
+# Load .env if present so GEMINI_API_KEY can be set there for local development
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except Exception:
+    # dotenv not available; expect environment variables to be set externally
+    pass
 
 def process_financial_statement(pdf_path):
     """
@@ -7,7 +16,10 @@ def process_financial_statement(pdf_path):
     Format: FAB-FS-{Quarter_number}-{year}-English.pdf
     """
     
-    genai.configure(api_key='AIzaSyClyeCh8KEEJ6RLjDWq04vqyTyiCHHSpww')
+    gemini_key = os.getenv('GEMINI_API_KEY')
+    if not gemini_key:
+        raise RuntimeError("GEMINI_API_KEY is not set. Please set it in the environment or in a .env file")
+    genai.configure(api_key=gemini_key)
     model = genai.GenerativeModel('gemini-2.5-pro')
     
     document = genai.upload_file(pdf_path)
@@ -98,7 +110,7 @@ def process_financial_statement(pdf_path):
     
     Return as markdown with clear section headers, page numbers, and structured tables.
     """
-    
+
     response = model.generate_content([prompt, document])
     return response.text
 
@@ -112,7 +124,10 @@ def process_earnings_presentation(pdf_path):
     - FAB-{Quarter_number}-{year_in_four_digits}-Earnings-Presentation.pdf
     """
     
-    genai.configure(api_key='AIzaSyClyeCh8KEEJ6RLjDWq04vqyTyiCHHSpww')
+    gemini_key = os.getenv('GEMINI_API_KEY')
+    if not gemini_key:
+        raise RuntimeError("GEMINI_API_KEY is not set. Please set it in the environment or in a .env file")
+    genai.configure(api_key=gemini_key)
     model = genai.GenerativeModel('gemini-2.5-flash')
     
     document = genai.upload_file(pdf_path)
@@ -216,7 +231,10 @@ def process_results_call(pdf_path):
     Format: FAB-Q{Quarter_number}-{year}-Results-Call.pdf
     """
     
-    genai.configure(api_key='AIzaSyClyeCh8KEEJ6RLjDWq04vqyTyiCHHSpww')
+    gemini_key = os.getenv('GEMINI_API_KEY')
+    if not gemini_key:
+        raise RuntimeError("GEMINI_API_KEY is not set. Please set it in the environment or in a .env file")
+    genai.configure(api_key=gemini_key)
     model = genai.GenerativeModel('gemini-2.5-flash')
     
     document = genai.upload_file(pdf_path)

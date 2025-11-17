@@ -1,0 +1,6 @@
+numexpr
+langchain-core
+langchain-openai
+chromadb
+google-generativeai
+python-dotenv
