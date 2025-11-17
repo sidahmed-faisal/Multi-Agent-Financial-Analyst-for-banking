@@ -8,6 +8,12 @@ import operator
 import json
 import re
 
+# Import LangSmith tracer
+try:
+    from monitoring.langsmith_tracer import LangSmithTracer
+except ImportError:
+    LangSmithTracer = None
+
 class AgentState(TypedDict):
     """State for the multi-agent workflow"""
     query: str
@@ -26,6 +32,11 @@ class BaseAgent:
         self.llm = llm
         self.name = name
         self.description = description
+        # Initialize tracer for LangSmith
+        if LangSmithTracer:
+            self.tracer = LangSmithTracer(agent_name=name)
+        else:
+            self.tracer = None
     
     def _format_context(self, context: List[Dict[str, Any]]) -> str:
         """Format context for LLM consumption"""
@@ -42,3 +53,17 @@ class BaseAgent:
             else:
                 formatted.append(str(item))
         return "\n\n".join(formatted)
+
+    def _trace_execution(self, operation: str, inputs: Dict, outputs: Dict, metadata: Dict = None):
+        """Trace agent execution to LangSmith"""
+        if self.tracer:
+            return self.tracer.trace_operation(
+                agent_name=self.name,
+                operation=operation,
+                inputs=inputs,
+                outputs=outputs,
+                metadata=metadata or {}
+            )
+        else:
+            print(f"⚠️ Tracer not available for {self.name}.{operation}")
+            return None
