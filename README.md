@@ -20,10 +20,10 @@ The system uses a LangGraph-based workflow with conditional routing between spec
 [![Workflow Diagram](https://mermaid.ink/img/pako:eNqNU9GO2yAQ_BVEpZMj2T7HbmKbnPJy-YR7aqkiYoONhMHC-NpclH8vJilyrhcpb7PszO6wCydYqZpCBKMowrJSkvEGYQkAE-p31RJtXARANep3ioDgkhKNpaM3mvQteNttsMRmvx-Mpe_3wc-Xfuujl-d--2uBEGJcD2YiKl21dDCaWBTMg8WU1dRoTt-JCDxy5xUR1SiI4UoGM-xyw1EaW4UPgUeLiyUqa2_IYW9HkIsbbxRE0RbM7Ww-tQVRDJ7kYeg3jEs-tBcMYiu7Fr-vsIM1XI50pvmv1fzgwV6fJDY7636H4cd6J-9HuLlZx4OOvuA_cnff1G3hZpx2UcOOMlBTRkZhAONCoG8sZQlj4fQco5bypjVoGac3AvfgHD1SPam4OaLkhjA9gWu5AzusWYUlDGGjeQ2R0SMNYUd1R6YQnqZfgKE12VEMkYVXPxhiebaynsgfSnUQMSIGK9VqbFofjX1NDN1xYr9M96-6trek-lWN0kBUpK4GRCf4B6KszOMiKdL18nuZFdkqW4XwaElFvFyVRZJn67zI8yQ9h_DDdU3iVZqkZVqWuZWUxbo4_wWlSVdp?type=png)](https://mermaid.live/edit#pako:eNqNU9GO2yAQ_BVEpZMj2T7HbmKbnPJy-YR7aqkiYoONhMHC-NpclH8vJilyrhcpb7PszO6wCydYqZpCBKMowrJSkvEGYQkAE-p31RJtXARANep3ioDgkhKNpaM3mvQteNttsMRmvx-Mpe_3wc-Xfuujl-d--2uBEGJcD2YiKl21dDCaWBTMg8WU1dRoTt-JCDxy5xUR1SiI4UoGM-xyw1EaW4UPgUeLiyUqa2_IYW9HkIsbbxRE0RbM7Ww-tQVRDJ7kYeg3jEs-tBcMYiu7Fr-vsIM1XI50pvmv1fzgwV6fJDY7636H4cd6J-9HuLlZx4OOvuA_cnff1G3hZpx2UcOOMlBTRkZhAONCoG8sZQlj4fQco5bypjVoGac3AvfgHD1SPam4OaLkhjA9gWu5AzusWYUlDGGjeQ2R0SMNYUd1R6YQnqZfgKE12VEMkYVXPxhiebaynsgfSnUQMSIGK9VqbFofjX1NDN1xYr9M96-6trek-lWN0kBUpK4GRCf4B6KszOMiKdL18nuZFdkqW4XwaElFvFyVRZJn67zI8yQ9h_DDdU3iVZqkZVqWuZWUxbo4_wWlSVdp)
 
 **Workflow Components:**
-- **Orchestrator Agent** (GPT-4): Plans query execution strategy
-- **Retrieval Agent** (GPT-3.5-turbo): Searches document store for relevant data
-- **Calculation Agent** (GPT-3.5-turbo): Performs financial calculations and metric extraction
-- **Synthesis Agent** (GPT-3.5-turbo): Combines results and validates against sources
+- **Orchestrator Agent** (GPT-4o): Plans query execution strategy
+- **Retrieval Agent** (GPT-4o): Searches document store for relevant data
+- **Calculation Agent** (GPT-4o): Performs financial calculations and metric extraction
+- **Synthesis Agent** (GPT-4o): Combines results and validates against sources
 
 ### System Architecture
 
@@ -56,8 +56,7 @@ User Request (FastAPI REST API)
 ### Technology Stack
 
 **AI & LLM:**
-- OpenAI GPT-4 (orchestration)
-- OpenAI GPT-3.5-turbo (specialist agents)
+- OpenAI GPT-4o (default for both orchestrator and specialist agents; configurable)
 - Google Gemini (document extraction)
 - LangChain & LangGraph (agent framework)
 
@@ -73,6 +72,17 @@ User Request (FastAPI REST API)
 **Observability:**
 - LangSmith (agent tracing & monitoring)
 - Console logging
+
+### Why GPT-4o (latency & cost)
+
+We use GPT-4o by default for both orchestration and specialist agents because it offers strong reasoning quality with materially lower latency and price than prior GPT‑4 tiers. That balance matters in a multi-agent graph where a single user query can trigger several LLM calls.
+
+- Lower end-to-end latency: keeps interactive queries and multi-step agent flows snappy.
+- Better price-performance: reduces per-request cost when multiple agent calls are required.
+- Reliable tool use and JSON adherence: pairs well with our “JSON-only” prompts and output sanitizers to keep parsing robust.
+- Future-proof: multimodal-capable; while we use Gemini for PDF extraction today, GPT‑4o keeps options open.
+
+You can change models any time (for quality/cost experiments) by editing `backend/main.py` where the `ChatOpenAI` models are set.
 
 ## 🚀 Quick Start
 
@@ -132,12 +142,50 @@ Server will be available at:
 
 ### Run the Streamlit Frontend (Optional)
 
+1) Start the backend API (in a separate terminal):
+
 ```powershell
-# In a separate terminal
+python -m uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+2) (Optional) Point the frontend to a different API URL. The Streamlit app reads `FAB_API_URL`:
+
+```powershell
+# Default is http://localhost:8000; override if your server runs elsewhere
+$env:FAB_API_URL = "http://localhost:8000"
+```
+
+3) Launch Streamlit:
+
+```powershell
 streamlit run frontend/app.py
 ```
 
-The Streamlit app will open in your browser at http://localhost:8501
+The app opens at http://localhost:8501. Use it to:
+- Upload one or more PDFs via the Upload panel
+- Ask a financial question in the Query panel and view the cited answer
+
+Notes
+- The frontend calls only two endpoints: `/upload` and `/query`.
+- If you change ports/hosts, set `FAB_API_URL` accordingly before launching Streamlit.
+
+### Run the Example Script (Alternative)
+
+If you prefer to test the system without the API server, use the example script:
+
+```powershell
+# Query existing documents in the database
+python example_usage.py
+
+# OR: Process a new document and then query it
+python example_usage.py Documents/FAB-FS-Q1-2025-English.pdf
+```
+
+The script will:
+1. Process the document (if provided) using the pipeline
+2. Store chunks in ChromaDB
+3. Run example queries and display results
+4. Show system statistics
 
 ## 📁 Project Structure
 
@@ -256,15 +304,15 @@ import os
 
 # Initialize components
 chunker = FABDocumentChunker(chroma_persist_directory="./chroma_db")
-orchestrator_llm = ChatOpenAI(model="gpt-4", temperature=0.1)
-specialist_llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.1)
+orchestrator_llm = ChatOpenAI(model="gpt-4o", temperature=0.1)
+specialist_llm = ChatOpenAI(model="gpt-4o", temperature=0.1)
 
 # Create agent manager
 agent_manager = FABAgentManager(orchestrator_llm, specialist_llm, chunker)
 
 # Analyze query
 result = agent_manager.analyze_query(
-    "What was FAB's Net Profit in Q1 2025?"
+  "What was FAB's Net Profit in Q1 2025?"
 )
 
 print(result['final_answer'])
@@ -286,13 +334,48 @@ Full API documentation available at http://localhost:8000/docs when the server i
 
 ## 🧪 Testing
 
-### Test Document Upload
+### Option 1: Test with Example Script (Recommended for Quick Testing)
 
+The example script processes a document and runs queries without needing the API server:
+
+```powershell
+# Test with a sample document
+python example_usage.py Documents/FAB-FS-Q1-2025-English.pdf
+```
+
+This will:
+1. ✅ Process the PDF through the document pipeline
+2. ✅ Extract sections and metadata using Gemini LLM
+3. ✅ Generate embeddings and store in ChromaDB
+4. ✅ Run 3 example queries and display answers with sources
+5. ✅ Show system statistics
+
+**Query existing documents only** (skip document upload):
 ```powershell
 python example_usage.py
 ```
 
-### Test Workflow Visualization
+### Option 2: Test with API Server
+
+Start the server and use cURL or the interactive docs:
+
+```powershell
+# Start server
+python -m uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
+
+# In another terminal: Upload document
+curl -X POST "http://localhost:8000/upload" \
+  -F "file=@Documents/FAB-FS-Q1-2025-English.pdf"
+
+# Query the system
+curl -X POST "http://localhost:8000/query" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "What was the Net Profit in Q1 2025?"}'
+```
+
+### Option 3: Test Workflow Visualization
+
+Generate a visual diagram of the agent workflow:
 
 ```powershell
 python visualize_workflow.py
