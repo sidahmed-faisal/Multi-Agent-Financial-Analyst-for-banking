@@ -7,7 +7,6 @@ __pycache__/
 *.so
 
 # Documents
-Documents/
 chroma_db/
 
 # Distribution / packaging
